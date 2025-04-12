@@ -19,7 +19,7 @@ const nextConfig = {
                 headers: [
                     {
                         key: "content-Security-Policy",
-                        value: "frame-src 'self' ",
+                        value: "frame-src 'self' https://car-waitlist.created.app ",
                     },
                     
                 ],

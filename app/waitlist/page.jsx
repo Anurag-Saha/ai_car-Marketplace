@@ -6,8 +6,8 @@ const WaitlistPage = () => {
       <div className="aspect-video w-full ">
         <iframe
           style={{width: "100%"}}
-          height="800"
-          src="https://carwaitlist.created.app"
+          height="78%"
+          src="https://car-waitlist.created.app"
           title="Waiting List Landing Page"
           frameBorder="0"
         ></iframe>
