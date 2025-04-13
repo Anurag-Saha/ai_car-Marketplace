@@ -25,8 +25,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import Image from "next/image";
+import { Button } from "@/components/ui/button";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
 const transmissions = ["Automatic", "Manual", "Semi-Automatic"];
@@ -138,6 +139,10 @@ const AddCarForm = () => {
     },
     multiple: true,
   });
+
+  const removeImage = (index) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <div>
@@ -442,19 +447,31 @@ const AddCarForm = () => {
                 </div>
 
                 {uploadedImages.length > 0 && (
-                  <div>
-                    <h3>Uploaded images ({uploadedImages.length})</h3>
-                    <div>
+                  <div className="mt-4">
+                    <h3 className="text-sm font-medium mb-2">
+                      Uploaded images ({uploadedImages.length})
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {uploadedImages.map((image, index) => {
                         return (
-                          <div>
+                          <div key={index} className="relative group">
                             <Image
                               src={image}
                               alt={`Car image ${index + 1}`}
                               width={50}
                               height={50}
                               className="h-28 w-full object-cover rounded-md"
+                              priority
                             />
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="destructive"
+                              className="absolute top-1 right-1 w-6 h-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
                           </div>
                         );
                       })}
@@ -474,3 +491,4 @@ const AddCarForm = () => {
 };
 
 export default AddCarForm;
+//3:04:50
