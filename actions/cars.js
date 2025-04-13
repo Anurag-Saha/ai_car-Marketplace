@@ -1,6 +1,6 @@
 import { db } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase";
-import { auth } from "@clerk/nextjs/dist/types/server";
+import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";

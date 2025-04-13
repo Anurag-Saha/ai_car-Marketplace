@@ -25,7 +25,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
-import { Upload} from "lucide-react";
+import { Upload } from "lucide-react";
+import Image from "next/image";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "Plug-in Hybrid"];
 const transmissions = ["Automatic", "Manual", "Semi-Automatic"];
@@ -95,7 +96,7 @@ const AddCarForm = () => {
     },
   });
   const onSubmit = async (data) => {
-    if(uploadedImages.length === 0){
+    if (uploadedImages.length === 0) {
       setImageError("Please upload at least one image");
       return;
     }
@@ -127,14 +128,16 @@ const AddCarForm = () => {
       reader.readAsDataURL(file);
     });
   };
-  const { getRootProps: getMultiImageRootProps, getInputProps: getMultiImageInputProps } =
-    useDropzone({
-      onDrop: onMultiImageDrop,
-      accept: {
-        "image/*": [".jpeg", ".jpg", ".png", ".webp"],
-      },
-      multiple: true,
-    });
+  const {
+    getRootProps: getMultiImageRootProps,
+    getInputProps: getMultiImageInputProps,
+  } = useDropzone({
+    onDrop: onMultiImageDrop,
+    accept: {
+      "image/*": [".jpeg", ".jpg", ".png", ".webp"],
+    },
+    multiple: true,
+  });
 
   return (
     <div>
@@ -406,27 +409,58 @@ const AddCarForm = () => {
                     </p>
                   </div>
                 </div>
-                
+                {/* Image Upload with Dropzone */}
                 <div>
-                  <Label htmlFor="images" 
-                  className={imageError?"text-red-500":""}>Images {imageError && <span className="text-red-500">*</span>}</Label>
-                  <div {...getMultiImageRootProps()} className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition mt-2 ${
-                    imageError?"border-red-500":"border-gray-300"
-                  }`}
+                  <Label
+                    htmlFor="images"
+                    className={imageError ? "text-red-500" : ""}
+                  >
+                    Images{" "}
+                    {imageError && <span className="text-red-500">*</span>}
+                  </Label>
+                  <div
+                    {...getMultiImageRootProps()}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:bg-gray-50 transition mt-2 ${
+                      imageError ? "border-red-500" : "border-gray-300"
+                    }`}
                   >
                     <input {...getMultiImageInputProps()} />
                     <div className="flex flex-col items-center justify-center">
-                      <Upload className="h-12 w-12 text-gray-400 mb-3"/>
+                      <Upload className="h-12 w-12 text-gray-400 mb-3" />
                       <p className="text-sm text-gray-600 ">
-                        Drag & drop a car image or click to upload multiple images
+                        Drag & drop a car image or click to upload multiple
+                        images
                       </p>
                       <p className="text-gray-500 text-xs mt-1">
                         (JPG,PNG,Webp,max 5MB each)
                       </p>
                     </div>
                   </div>
-                  {imageError && (<p className="text-xs text-red-500 mt-1">{imageError}</p>)}
+                  {imageError && (
+                    <p className="text-xs text-red-500 mt-1">{imageError}</p>
+                  )}
                 </div>
+
+                {uploadedImages.length > 0 && (
+                  <div>
+                    <h3>Uploaded images ({uploadedImages.length})</h3>
+                    <div>
+                      {uploadedImages.map((image, index) => {
+                        return (
+                          <div>
+                            <Image
+                              src={image}
+                              alt={`Car image ${index + 1}`}
+                              width={50}
+                              height={50}
+                              className="h-28 w-full object-cover rounded-md"
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </form>
             </CardContent>
           </Card>
