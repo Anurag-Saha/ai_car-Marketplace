@@ -1,9 +1,12 @@
+"use server";
+
 import { db } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase";
 import { auth } from "@clerk/nextjs/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { v4 as uuidv4 } from "uuid";  
 
 async function fileToBase64(file) {
   const bytes = await file.arrayBuffer();
@@ -124,13 +127,13 @@ export async function addCar({ carData, images }) {
     for (let i = 0; i < images.length; i++) {
       const base64Data = images[i];
       // Skip if the image data is invalid
-      if (!base64Data || base64Data.startWith("data:images/")) {
+      if (!base64Data || base64Data.startsWith("data:images/")) {
         console.warn("skipping invalid image data");
         continue;
       }
       //Extract the base64 part (remove the data:image/xyz;base64, prefix)
       const base64 = base64Data.split(",")[1];
-      const imageBuffer = Buffer.form(base64, "base64");
+      const imageBuffer = Buffer.from(base64, "base64");
 
       // Determine file extension from the data URL
       const mimeMatch = base64Data.match(/data:image\/([a-zA-Z0-9]+);/);
