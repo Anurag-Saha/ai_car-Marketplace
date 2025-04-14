@@ -1,12 +1,12 @@
 "use server";
 
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
+import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase";
 import { auth } from "@clerk/nextjs/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
-import { v4 as uuidv4 } from "uuid";  
 
 async function fileToBase64(file) {
   const bytes = await file.arrayBuffer();
@@ -20,7 +20,7 @@ export async function processCarImageWithAI(file) {
     }
 
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "Gemini-1.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const base64Image = await fileToBase64(file);
     const imagePart = {
       inlineData: {
@@ -182,7 +182,7 @@ export async function addCar({ carData, images }) {
       },
     });
 
-    revalidatePath( '/admin/cars');
+    revalidatePath("/admin/cars");
     return {
       success: true,
     };
