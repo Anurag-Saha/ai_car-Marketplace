@@ -324,5 +324,23 @@ export async function updateCarStatus(id, { status, featured }) {
     if (featured !== undefined) {
       updateData.featured = featured;
     }
-  } catch (error) {}
+
+    //update the car
+    await db.car.update({
+      where: { id },
+      data: updateData,
+    });
+
+    revalidatePath("/admin/cars");
+
+    return {
+      success: true,
+    };
+  } catch (error) {
+    console.error("Error updating car status:", error);
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
 }
