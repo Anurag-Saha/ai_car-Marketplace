@@ -28,6 +28,15 @@ import {
 } from "@/components/ui/table";
 
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -39,9 +48,12 @@ import Image from "next/image";
 import { formatCurrency } from "@/lib/helper";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { set } from "date-fns";
 
 const CarsList = () => {
   const [search, setSearch] = useState("");
+  const [carToDelete, setCarToDelete] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
 
   const router = useRouter();
 
@@ -72,19 +84,47 @@ const CarsList = () => {
 
   //Handel Successful operation
   useEffect(() => {
+    if (deleteResult?.success) {
+      toast.success("Car deleted successfully");
+      fetchCars(search);
+    }
     if (updateResult?.success) {
       toast.success("Car updated successfully");
       fetchCars(search);
     }
-  }, [updateResult, search]);
+  }, [updateResult, deleteResult]);
+
+  //Handel error
+  useEffect(() => {
+    if (carsError) {
+      toast.error("Failed to load cars");
+    }
+    if (deleteError) {
+      toast.error("Failed to delete car");
+    }
+    if (updateError) {
+      toast.error("Failed to update car");
+    }
+  }, [carsError, deleteError, updateError]);
 
   const handelSearchSubmit = (e) => {
     e.preventDefault();
-    //api call
+    fetchCars(search);
+  };
+
+  const handleDeleteCar = async (car) => {
+    if (!carToDelete) return;
+    await deleteCarFn(carToDelete.id);
+    setDeleteDialogOpen(false);
+    setCarToDelete(null);
   };
 
   const handleToggleFeatured = async (car) => {
     await updateCarStatusFn(car.id, { featured: !car.featured });
+  };
+
+  const handelStatusUpdate = async (car, newStatus) => {
+    await updateCarStatusFn(car.id, { status: newStatus });
   };
 
   // Get status badge color
@@ -222,14 +262,41 @@ const CarsList = () => {
                               <DropdownMenuSeparator />
 
                               <DropdownMenuLabel>Status</DropdownMenuLabel>
-                              <DropdownMenuItem>Set Available</DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handelStatusUpdate(car, "AVAILABLE")
+                                }
+                                disabled={
+                                  car.status === "AVAILABLE" || updatingCar
+                                }
+                              >
+                                Set Available
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handelStatusUpdate(car, "UNAVAILABLE")
+                                }
+                                disabled={
+                                  car.status === "UNAVAILABLE" || updatingCar
+                                }
+                              >
                                 Set Unavailable
                               </DropdownMenuItem>
-                              <DropdownMenuItem>Mark as Sold</DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handelStatusUpdate(car, "SOLD")}
+                                disabled={car.status === "SOLD" || updatingCar}
+                              >
+                                Mark as Sold
+                              </DropdownMenuItem>
 
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem className="text-red-600">
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => {
+                                  setCarToDelete(car);
+                                  setDeleteDialogOpen(true);
+                                }}
+                              >
                                 <Trash2 className="mr-2 h-4 w-4" />
                                 Delete
                               </DropdownMenuItem>
@@ -243,10 +310,59 @@ const CarsList = () => {
               </Table>
             </div>
           ) : (
-            <div></div>
+            <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+              <CarIcon className="h-12 w-12 text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-1">
+                No cars found
+              </h3>
+              <p className="text-gray-500 mb-4">
+                {search
+                  ? "No cars match your search criteria"
+                  : "Your inventory is empty. Add cars to get started."}
+              </p>
+              <Button onClick={() => router.push("/admin/cars/create")}>
+                Add Your First Car
+              </Button>
+            </div>
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm Deletion</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {carToDelete?.make}{" "}
+              {carToDelete?.model} ({carToDelete?.year})? This action cannot be
+              undone.
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              variant="destructive"
+              onClick={handleDeleteCar}
+              disabled={deletingCar}
+            >
+              {deletingCar ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting...
+                </>
+              ) : (
+                "Delete Car"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
