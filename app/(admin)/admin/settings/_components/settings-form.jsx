@@ -11,6 +11,7 @@ import {
   UserX,
   CheckCircle,
   Search,
+  Divide,
 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
@@ -165,6 +166,14 @@ const SettingForm = () => {
     }
   }, [saveResult]);
 
+  const filteredUsers = usersData?.success
+    ? usersData.data.filter(
+        (user) =>
+          user.name?.toLowerCase().includes(userSearch.toLowerCase()) ||
+          user.email.toLowerCase().includes(userSearch.toLowerCase())
+      )
+    : [];
+
   return (
     <div className="space-y-6">
       <Tabs defaultValue="hours">
@@ -282,7 +291,82 @@ const SettingForm = () => {
           </Card>
         </TabsContent>
         <TabsContent value="admins" className="space-y-6 mt-6">
-          Change your password here.
+          <Card>
+            <CardHeader>
+              <CardTitle>Admin Users</CardTitle>
+              <CardDescription>
+                Manage users with admin privileges
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="mb-6 relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4   text-gray-500" />
+                <Input
+                  type="search"
+                  placeholder="Search users..."
+                  className="pl-9 w-full"
+                  value={userSearch}
+                  onChange={(e) => setUserSearch(e.target.value)}
+                />
+              </div>
+
+              {fetchingUsers ? (
+                <div className="py-12 flex justify-center">
+                  <Loader2 className=" h-8 w-8 animate-spin text-gray-400" />
+                </div>
+              ) : usersData?.success && filteredUsers.length > 0 ? (
+                <div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[100px]">Invoice</TableHead>
+                        <TableHead>User</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      <TableRow>
+                        {filteredUsers.map((user) => {
+                          return (
+                            <TableCell className="font-medium">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden relative">
+                                  {user.imageUrl ? (
+                                    <img
+                                      src={user.imageUrl}
+                                      alt={user.name || "User"}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <Users className="h-4 w-4 text-gray-500" />
+                                  )}
+                                </div>
+                                <span>{user.name || "Unnamed User"}</span>
+                              </div>
+                            </TableCell>
+                          );
+                        })}
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="py-12 text-center">
+                  <Users className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-1">
+                    No User Found
+                  </h3>
+                  <p>
+                    {userSearch
+                      ? "No users match your search criteria"
+                      : "there are no users registered yet"}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
@@ -290,5 +374,3 @@ const SettingForm = () => {
 };
 
 export default SettingForm;
-
-//4:11:50
