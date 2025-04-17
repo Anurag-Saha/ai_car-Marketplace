@@ -166,6 +166,18 @@ const SettingForm = () => {
     }
   }, [saveResult]);
 
+  const handleMakeAdmin = async (user) => {
+    if (
+      confirm(
+        `Are you sure you want to promote ${
+          user.name || user.email
+        } to admin? Admin users can manage all aspects of the dealership.`
+      )
+    ) {
+      await updateRole(user.id, "ADMIN");
+    }
+  };
+
   const filteredUsers = usersData?.success
     ? usersData.data.filter(
         (user) =>
@@ -319,7 +331,6 @@ const SettingForm = () => {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-[100px]">Invoice</TableHead>
                         <TableHead>User</TableHead>
                         <TableHead>Email</TableHead>
                         <TableHead>Role</TableHead>
@@ -327,9 +338,9 @@ const SettingForm = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      <TableRow>
-                        {filteredUsers.map((user) => {
-                          return (
+                      {filteredUsers.map((user) => {
+                        return (
+                          <TableRow>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden relative">
@@ -346,9 +357,45 @@ const SettingForm = () => {
                                 <span>{user.name || "Unnamed User"}</span>
                               </div>
                             </TableCell>
-                          );
-                        })}
-                      </TableRow>
+                            <TableCell> {user.email}</TableCell>
+                            <TableCell>
+                              <Badge
+                                className={
+                                  user.role === "ADMIN"
+                                    ? "bg-green-500"
+                                    : "bg-gray-500"
+                                }
+                              >
+                                {user.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {user.role === "ADMIN" ? (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="text-red-600"
+                                  onClick={() => handleRemoveAdmin(user)}
+                                  disabled={updatingRole}
+                                >
+                                  <UserX className="mr-2 h-4 w-4" />
+                                  Remove Admin
+                                </Button>
+                              ) : (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMakeAdmin(user)}
+                                  disabled={updatingRole}
+                                >
+                                  <Shield className="mr-2 h-4 w-4" />
+                                  Make Admin
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
