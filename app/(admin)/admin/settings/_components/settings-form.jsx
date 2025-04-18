@@ -138,6 +138,27 @@ const SettingForm = () => {
     error: updateRoleError,
   } = useFetch(updateUserRole);
 
+
+    // Handle errors
+    useEffect(() => {
+      if (settingsError) {
+        toast.error("Failed to load dealership settings");
+      }
+  
+      if (saveError) {
+        toast.error(`Failed to save working hours: ${saveError.message}`);
+      }
+  
+      if (usersError) {
+        toast.error("Failed to load users");
+      }
+  
+      if (updateRoleError) {
+        toast.error(`Failed to update user role: ${updateRoleError.message}`);
+      }
+    }, [settingsError, saveError, usersError, updateRoleError]);
+  
+
   // Fetch settings and users on component mount
   useEffect(() => {
     fetchDealershipInfo();
@@ -164,7 +185,12 @@ const SettingForm = () => {
       toast.success("Working hours saved successfully");
       fetchDealershipInfo();
     }
-  }, [saveResult]);
+
+    if (updateRoleResult?.success) {
+      toast.success("User role updated successfully");
+      fetchUsers();
+    }
+  }, [saveResult, updateRoleResult]);
 
   const handleMakeAdmin = async (user) => {
     if (
@@ -175,6 +201,18 @@ const SettingForm = () => {
       )
     ) {
       await updateRole(user.id, "ADMIN");
+    }
+  };
+
+  const handleRemoveAdmin = async (user) => {
+    if (
+      confirm(
+        `Are you sure you want to demote ${
+          user.name || user.email
+        } from admin? They will no longer be able to access the admin dashboard.`
+      )
+    ) {
+      await updateRole(user.id, "USER");
     }
   };
 
@@ -340,7 +378,7 @@ const SettingForm = () => {
                     <TableBody>
                       {filteredUsers.map((user) => {
                         return (
-                          <TableRow>
+                          <TableRow key={user.id}>
                             <TableCell className="font-medium">
                               <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden relative">
