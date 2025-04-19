@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
-import { formatCurrency } from "@/lib/helper";
+import { formatCurrency } from "@/lib/helpers";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { set } from "date-fns";

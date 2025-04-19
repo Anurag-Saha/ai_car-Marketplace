@@ -7,24 +7,31 @@ import { v4 as uuidv4 } from "uuid";
 import { db } from "@/lib/prisma";
 import { createClient } from "@/lib/supabase";
 import { auth } from "@clerk/nextjs/server";
-import { serialize } from "@supabase/ssr";
-import { serializeCarData } from "@/lib/helper";
+import { serializeCarData } from "@/lib/helpers";
 
+// Function to convert File to base64
 async function fileToBase64(file) {
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   return buffer.toString("base64");
 }
 
+// Gemini AI integration for car image processing
 export async function processCarImageWithAI(file) {
   try {
+    // Check if API key is available
     if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not Configured");
+      throw new Error("Gemini API key is not configured");
     }
 
+    // Initialize Gemini API
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+    // Convert image file to base64
     const base64Image = await fileToBase64(file);
+
+    // Create image part for the model
     const imagePart = {
       inlineData: {
         data: base64Image,
@@ -32,8 +39,9 @@ export async function processCarImageWithAI(file) {
       },
     };
 
+    // Define the prompt for car detail extraction
     const prompt = `
-     Analyze this car image and extract the following information:
+      Analyze this car image and extract the following information:
       1. Make (manufacturer)
       2. Model
       3. Year (approximately)
@@ -63,13 +71,18 @@ export async function processCarImageWithAI(file) {
       For confidence, provide a value between 0 and 1 representing how confident you are in your overall identification.
       Only respond with the JSON object, nothing else.
     `;
+
+    // Get response from Gemini
     const result = await model.generateContent([imagePart, prompt]);
     const response = await result.response;
     const text = response.text();
     const cleanedText = text.replace(/```(?:json)?\n?/g, "").trim();
+
+    // Parse the JSON response
     try {
       const carDetails = JSON.parse(cleanedText);
 
+      // Validate the response format
       const requiredFields = [
         "make",
         "model",
@@ -87,28 +100,33 @@ export async function processCarImageWithAI(file) {
       const missingFields = requiredFields.filter(
         (field) => !(field in carDetails)
       );
+
       if (missingFields.length > 0) {
         throw new Error(
-          `AI response is missing required fields: ${missingFields.join(", ")}`
+          `AI response missing required fields: ${missingFields.join(", ")}`
         );
       }
 
+      // Return success response with data
       return {
         success: true,
         data: carDetails,
       };
-    } catch (error) {
-      console.log("failed to parse AI response", parseError);
+    } catch (parseError) {
+      console.error("Failed to parse AI response:", parseError);
+      console.log("Raw response:", text);
       return {
         success: false,
         error: "Failed to parse AI response",
       };
     }
   } catch (error) {
-    throw new Error("Gemini API error: " + error.message);
+    console.error();
+    throw new Error("Gemini API error:" + error.message);
   }
 }
 
+// Add a car to the database with images
 export async function addCar({ carData, images }) {
   try {
     const { userId } = await auth();
@@ -117,24 +135,30 @@ export async function addCar({ carData, images }) {
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
     });
+
     if (!user) throw new Error("User not found");
 
+    // Create a unique folder name for this car's images
     const carId = uuidv4();
     const folderPath = `cars/${carId}`;
 
+    // Initialize Supabase client for server-side operations
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
+    // Upload all images to Supabase storage
     const imageUrls = [];
 
     for (let i = 0; i < images.length; i++) {
       const base64Data = images[i];
-      // Skip if the image data is invalid
-      if (!base64Data || base64Data.startsWith("data:images/")) {
-        console.warn("skipping invalid image data");
+
+      // Skip if image data is not valid
+      if (!base64Data || !base64Data.startsWith("data:image/")) {
+        console.warn("Skipping invalid image data");
         continue;
       }
-      //Extract the base64 part (remove the data:image/xyz;base64, prefix)
+
+      // Extract the base64 part (remove the data:image/xyz;base64, prefix)
       const base64 = base64Data.split(",")[1];
       const imageBuffer = Buffer.from(base64, "base64");
 
@@ -157,17 +181,21 @@ export async function addCar({ carData, images }) {
         console.error("Error uploading image:", error);
         throw new Error(`Failed to upload image: ${error.message}`);
       }
+
+      // Get the public URL for the uploaded file
       const publicUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/car-images/${filePath}`; // disable cache in config
 
       imageUrls.push(publicUrl);
     }
+
     if (imageUrls.length === 0) {
-      throw new Error("No valid images uploaded");
+      throw new Error("No valid images were uploaded");
     }
 
+    // Add the car to the database
     const car = await db.car.create({
       data: {
-        id: carId,
+        id: carId, // Use the same ID we used for the folder
         make: carData.make,
         model: carData.model,
         year: carData.year,
@@ -181,31 +209,28 @@ export async function addCar({ carData, images }) {
         description: carData.description,
         status: carData.status,
         featured: carData.featured,
-        images: imageUrls, //store the array of image urls
+        images: imageUrls, // Store the array of image URLs
       },
     });
 
+    // Revalidate the cars list page
     revalidatePath("/admin/cars");
+
     return {
       success: true,
     };
   } catch (error) {
-    throw new Error("Error adding car: " + error.message);
+    throw new Error("Error adding car:" + error.message);
   }
 }
 
+// Fetch all cars with simple search
 export async function getCars(search = "") {
   try {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Unauthorized");
-
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-    if (!user) throw new Error("User not found");
-
+    // Build where conditions
     let where = {};
 
+    // Add search filter
     if (search) {
       where.OR = [
         { make: { contains: search, mode: "insensitive" } },
@@ -214,14 +239,13 @@ export async function getCars(search = "") {
       ];
     }
 
-    const car = await db.car.findMany({
+    // Execute main query
+    const cars = await db.car.findMany({
       where,
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: { createdAt: "desc" },
     });
 
-    const serializedCars = car.map(serializeCarData);
+    const serializedCars = cars.map(serializeCarData);
 
     return {
       success: true,
@@ -236,23 +260,18 @@ export async function getCars(search = "") {
   }
 }
 
+// Delete a car by ID
 export async function deleteCar(id) {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-    if (!user) throw new Error("User not found");
-
-    //First ,fetch the car to get its images
+    // First, fetch the car to get its images
     const car = await db.car.findUnique({
       where: { id },
-      select: {
-        images: true,
-      },
+      select: { images: true },
     });
+
     if (!car) {
       return {
         success: false,
@@ -260,24 +279,26 @@ export async function deleteCar(id) {
       };
     }
 
-    //Delete the car from the database
+    // Delete the car from the database
     await db.car.delete({
       where: { id },
     });
 
+    // Delete the images from Supabase storage
     try {
-      const cookieStore = await cookies();
+      const cookieStore = cookies();
       const supabase = createClient(cookieStore);
 
-      //Delete the images from the storage
+      // Extract file paths from image URLs
       const filePaths = car.images
-        .map((image) => {
-          const url = new URL(image);
+        .map((imageUrl) => {
+          const url = new URL(imageUrl);
           const pathMatch = url.pathname.match(/\/car-images\/(.*)/);
           return pathMatch ? pathMatch[1] : null;
         })
         .filter(Boolean);
 
+      // Delete files from storage if paths were extracted
       if (filePaths.length > 0) {
         const { error } = await supabase.storage
           .from("car-images")
@@ -285,13 +306,15 @@ export async function deleteCar(id) {
 
         if (error) {
           console.error("Error deleting images:", error);
-          //we continue even if image deletion fails
+          // We continue even if image deletion fails
         }
       }
     } catch (storageError) {
       console.error("Error with storage operations:", storageError);
+      // Continue with the function even if storage operations fail
     }
 
+    // Revalidate the cars list page
     revalidatePath("/admin/cars");
 
     return {
@@ -306,17 +329,14 @@ export async function deleteCar(id) {
   }
 }
 
+// Update car status or featured status
 export async function updateCarStatus(id, { status, featured }) {
   try {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-    if (!user) throw new Error("User not found");
-
     const updateData = {};
+
     if (status !== undefined) {
       updateData.status = status;
     }
@@ -325,12 +345,13 @@ export async function updateCarStatus(id, { status, featured }) {
       updateData.featured = featured;
     }
 
-    //update the car
+    // Update the car
     await db.car.update({
       where: { id },
       data: updateData,
     });
 
+    // Revalidate the cars list page
     revalidatePath("/admin/cars");
 
     return {

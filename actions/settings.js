@@ -10,7 +10,7 @@ export async function getDealershipInfo() {
     const { userId } = await auth();
     if (!userId) throw new Error("Unauthorized");
 
-    // Get the dealership recordorking 
+    // Get the dealership record
     let dealership = await db.dealershipInfo.findFirst({
       include: {
         workingHours: {
