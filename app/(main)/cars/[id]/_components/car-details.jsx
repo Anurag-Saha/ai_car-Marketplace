@@ -53,7 +53,7 @@ export function CarDetails({ car, testDriveInfo }) {
       setIsWishlisted(toggleResult.saved);
       toast.success(toggleResult.message);
     }
-  }, [toggleResult,isSaved]);
+  }, [toggleResult]);
 
   // Handle errors with useEffect
   useEffect(() => {
