@@ -82,7 +82,7 @@ export function CarDetails({ car, testDriveInfo }) {
       navigator
         .share({
           title: `${car.year} ${car.make} ${car.model}`,
-          text: `Check out this ${car.year} ${car.make} ${car.model} on Vehiql!`,
+          text: `Check out this ${car.year} ${car.make} ${car.model} on Car Port!`,
           url: window.location.href,
         })
         .catch((error) => {
@@ -235,7 +235,7 @@ export function CarDetails({ car, testDriveInfo }) {
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Vehiql Car Loan Calculator</DialogTitle>
+                <DialogTitle>Car Port  Loan Calculator</DialogTitle>
                 <EmiCalculator price={car.price} />
               </DialogHeader>
             </DialogContent>
@@ -252,7 +252,7 @@ export function CarDetails({ car, testDriveInfo }) {
                 Our representatives are available to answer all your queries
                 about this vehicle.
               </p>
-              <a href="mailto:help@vehiql.in">
+              <a href="mailto:help@CarPort.in">
                 <Button variant="outline" className="w-full">
                   Request Info
                 </Button>
@@ -385,7 +385,7 @@ export function CarDetails({ car, testDriveInfo }) {
             <div className="flex items-start gap-3">
               <LocateFixed className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
               <div>
-                <h4 className="font-medium">Vehiql Motors</h4>
+                <h4 className="font-medium">Car Port Motors</h4>
                 <p className="text-gray-600">
                   {testDriveInfo.dealership?.address || "Not Available"}
                 </p>

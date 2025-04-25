@@ -2,7 +2,7 @@ import React from "react";
 import CarsList from "./_components/car-list";
 
 export const metadata = {
-  title: "Cars | Vehiql Admin",
+  title: "Cars | Car Port Admin",
   description: "Manage Cars in your Marketplace",
 };
 const CarsPage = () => {
