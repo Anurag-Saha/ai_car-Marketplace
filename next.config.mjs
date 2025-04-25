@@ -1,6 +1,21 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
 
+    async headers() {
+        return [
+          {
+            source: "/embed",
+            headers: [
+              {
+                key: "content-security-policy",
+                value: "frame-src 'self' https://carWait-list.created.app;",
+              },
+            ],
+          },
+        ];
+        
+    },
+
     experimental: {
         serverComponentsHmrCache:false, // default to true 
     },
@@ -12,20 +27,7 @@ const nextConfig = {
             },
         ],
     },
-    async headers() {
-        return [
-            {
-                source: "/embed",
-                headers: [
-                    {
-                        key: "content-Security-Policy",
-                        value: "frame-src 'self' https://car-waitlist.created.app ",
-                    },
-                    
-                ],
-            },
-        ];
-    },  
+      
 };
 
 export default nextConfig;
