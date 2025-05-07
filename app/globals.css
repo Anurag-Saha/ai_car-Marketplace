@@ -122,7 +122,7 @@
 }
 
 .dotted-background {
-  background-color: #16223c;
+  background-color: #000000;
   background-image: radial-gradient(
     rgba(255, 255, 255, 0.28) 1px,
     transparent 1px
